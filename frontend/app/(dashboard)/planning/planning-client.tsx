@@ -10,6 +10,7 @@ import { ContactMap } from '@/components/planning/ContactMap'
 import { PlanningDialog } from '@/components/planning/PlanningDialog'
 import { CreateEventDialog } from '@/components/planning/CreateEventDialog'
 import { ResultsView } from '@/components/planning/ResultsView'
+import { SavedRoutes } from '@/components/planning/SavedRoutes'
 import { Button } from '@/components/ui/button'
 import { Route, Settings2, CalendarPlus } from 'lucide-react'
 import Link from 'next/link'
@@ -160,6 +161,7 @@ export function PlanningClient({ accessToken, initialContacts }: Props) {
           <p className="text-muted-foreground text-sm mt-0.5">{t('subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
+          <SavedRoutes onLoad={selectIds} />
           <Button
             variant="outline"
             size="lg"

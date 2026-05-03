@@ -1,14 +1,16 @@
 'use client'
 
 import { useEffect, useRef, useMemo, useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Clock, MapPin, AlertTriangle, CalendarPlus, Loader2, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Clock, MapPin, AlertTriangle, CalendarPlus, Loader2, CheckCircle2, BookmarkPlus, BookmarkCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDate, formatTime } from '@/lib/utils'
 import { loadAtlasSDK } from '@/lib/atlas'
+import { routeHistoryApi } from '@/lib/api'
 import type { OptimizeResult, GraphContact, IJobDisposition } from '@/types'
 import { isVisitStop, isHomeOrTransit, UNDISPATCHABLE_REASON_LABELS } from '@/types'
 
@@ -96,6 +98,10 @@ export function ResultsView({ result, contacts, onBack, accessToken }: Props) {
   const atlasMapRef = useRef<unknown>(null)
   const [savingCalendar, setSavingCalendar] = useState(false)
   const [calendarSaved, setCalendarSaved] = useState(false)
+  const [savingRoute, setSavingRoute] = useState(false)
+  const [routeSaved, setRouteSaved] = useState(false)
+  const { data: session } = useSession()
+  const userId = session?.user?.email ?? ''
 
   const handleSaveToCalendar = async () => {
     setSavingCalendar(true)
@@ -107,6 +113,28 @@ export function ResultsView({ result, contacts, onBack, accessToken }: Props) {
       toast.error(err instanceof Error ? err.message : 'Failed to save to calendar')
     } finally {
       setSavingCalendar(false)
+    }
+  }
+
+  const handleSaveRoute = async () => {
+    if (!userId) return
+    setSavingRoute(true)
+    try {
+      const visits = result.JobDispositions.filter((d) => isVisitStop(d.Job.Type))
+      const contactIds = visits.map((d) => d.Job.ReferenceId || d.Job.Id)
+      const allDates = visits.map((d) => d.StartDate.slice(0, 10)).sort()
+      const startDate = allDates[0] ?? ''
+      const endDate = allDates[allDates.length - 1] ?? ''
+      const name = startDate === endDate
+        ? `${formatDate(startDate)} · ${visits.length} visits`
+        : `${formatDate(startDate)} – ${formatDate(endDate)} · ${visits.length} visits`
+      await routeHistoryApi.save(userId, { name, startDate, endDate, visitCount: visits.length, contactIds })
+      setRouteSaved(true)
+      toast.success('Route saved to history')
+    } catch {
+      toast.error('Failed to save route')
+    } finally {
+      setSavingRoute(false)
     }
   }
 
@@ -252,6 +280,20 @@ export function ResultsView({ result, contacts, onBack, accessToken }: Props) {
             </div>
           </div>
 
+          <Button
+            variant={routeSaved ? 'secondary' : 'outline'}
+            size="sm"
+            onClick={handleSaveRoute}
+            disabled={savingRoute || routeSaved || !userId}
+          >
+            {savingRoute ? (
+              <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" suppressHydrationWarning />Saving…</>
+            ) : routeSaved ? (
+              <><BookmarkCheck className="mr-2 h-3.5 w-3.5 text-green-500" suppressHydrationWarning />Saved</>
+            ) : (
+              <><BookmarkPlus className="mr-2 h-3.5 w-3.5" suppressHydrationWarning />Save Route</>
+            )}
+          </Button>
           <Button
             variant={calendarSaved ? 'secondary' : 'outline'}
             size="sm"

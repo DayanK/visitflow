@@ -12,8 +12,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Loader2, RefreshCw, AlertCircle } from 'lucide-react'
+import { Loader2, RefreshCw, AlertCircle, Download } from 'lucide-react'
 import { settingsApi } from '@/lib/api'
+import { exportVisitsCsv } from '@/lib/utils'
 import { useSession } from 'next-auth/react'
 import type { Visit, ICalendarEvent, GraphContact } from '@/types'
 
@@ -126,6 +127,16 @@ export function VisitsClient({ userId, initialStart, initialEnd, initialToday }:
           <Button size="sm" className="h-8 gap-1.5" onClick={applyRange} disabled={isLoading}>
             <RefreshCw className="h-3.5 w-3.5" suppressHydrationWarning />
             {t('load')}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 gap-1.5"
+            onClick={() => exportVisitsCsv(visits)}
+            disabled={visits.length === 0}
+          >
+            <Download className="h-3.5 w-3.5" suppressHydrationWarning />
+            {t('exportCsv')}
           </Button>
         </div>
       </div>

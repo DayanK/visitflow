@@ -8,6 +8,7 @@ const TABLE_NAMES = {
   COORDINATES: 'Coordinates',
   VISIT_REPORT: 'VisitReport',
   CONTACT_NOTES: 'ContactNotes',
+  ROUTE_HISTORY: 'RouteHistory',
 };
 
 function getTableClient(tableName) {
@@ -195,6 +196,55 @@ async function upsertContactNote(userId, contactId, content) {
   );
 }
 
+// ─── Route History ─────────────────────────────────────────────────────────────
+
+async function saveRoute(userId, route) {
+  const client = getTableClient(TABLE_NAMES.ROUTE_HISTORY);
+  const pk = normalizeKey(userId);
+  const rk = new Date().toISOString().replace(/[^0-9]/g, '');
+  await client.upsertEntity({
+    partitionKey: pk,
+    rowKey: rk,
+    UserId: userId,
+    Name: route.name,
+    StartDate: route.startDate,
+    EndDate: route.endDate,
+    VisitCount: route.visitCount,
+    ContactIds: JSON.stringify(route.contactIds),
+    CreatedAt: new Date().toISOString(),
+  }, 'Replace');
+  return { ...route, id: rk };
+}
+
+async function getAllRoutes(userId) {
+  const client = getTableClient(TABLE_NAMES.ROUTE_HISTORY);
+  const pk = normalizeKey(userId);
+  const entities = client.listEntities({ queryOptions: { filter: `PartitionKey eq '${pk}'` } });
+  const result = [];
+  for await (const e of entities) {
+    result.push({
+      id: e.rowKey,
+      userId: e.UserId,
+      name: e.Name,
+      startDate: e.StartDate,
+      endDate: e.EndDate,
+      visitCount: e.VisitCount,
+      contactIds: JSON.parse(e.ContactIds || '[]'),
+      createdAt: e.CreatedAt,
+    });
+  }
+  return result.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+async function deleteRoute(userId, routeId) {
+  const client = getTableClient(TABLE_NAMES.ROUTE_HISTORY);
+  try {
+    await client.deleteEntity(normalizeKey(userId), routeId);
+  } catch (err) {
+    if (err.statusCode !== 404) throw err;
+  }
+}
+
 module.exports = {
   initializeTables,
   getAllUserSettings,
@@ -209,4 +259,7 @@ module.exports = {
   getContactNote,
   getAllContactNotes,
   upsertContactNote,
+  saveRoute,
+  getAllRoutes,
+  deleteRoute,
 };

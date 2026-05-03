@@ -93,6 +93,29 @@ export const notesApi = {
     api.post('/api/StoreContactNote', { userId, contactId, content }).then((r) => r.data),
 }
 
+// ─── Route History ────────────────────────────────────────────────────────────
+export interface SavedRoute {
+  id: string
+  userId: string
+  name: string
+  startDate: string
+  endDate: string
+  visitCount: number
+  contactIds: string[]
+  createdAt: string
+}
+
+export const routeHistoryApi = {
+  getAll: (userId: string): Promise<SavedRoute[]> =>
+    api.get(`/api/GetRouteHistory/${encodeURIComponent(userId)}`).then((r) => r.data.routes ?? []),
+
+  save: (userId: string, payload: Omit<SavedRoute, 'id' | 'userId' | 'createdAt'>): Promise<SavedRoute> =>
+    api.post('/api/SaveRoute', { userId, ...payload }).then((r) => r.data.route),
+
+  delete: (userId: string, routeId: string) =>
+    api.delete(`/api/DeleteRoute/${encodeURIComponent(userId)}/${encodeURIComponent(routeId)}`),
+}
+
 // ─── Graph API (via Next.js API routes — same origin, no CORS) ───────────────
 export const graphApi = {
   getAllContacts: (_token?: string) =>
