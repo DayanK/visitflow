@@ -1,19 +1,22 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
 import { useTranslations } from 'next-intl'
+import { useSession } from 'next-auth/react'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Loader2, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
+import { notesApi } from '@/lib/api'
 import type { GraphContact } from '@/types'
 
 const schema = z.object({
@@ -35,36 +38,48 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   onUpdated: () => void
+  onNoteSaved?: (contactId: string, hasNote: boolean) => void
 }
 
-export function EditContactDialog({ contact, open, onOpenChange, onUpdated }: Props) {
+function getDefaultValues(contact: GraphContact | null): FormValues {
+  if (!contact) return { displayName: '', jobTitle: '', companyName: '', street: '', postalCode: '', city: '', country: '', mobilePhone: '', email: '' }
+  const addr = contact.businessAddress ?? contact.homeAddress
+  return {
+    displayName:  contact.displayName ?? '',
+    jobTitle:     contact.jobTitle ?? '',
+    companyName:  contact.companyName ?? '',
+    street:       addr?.street ?? '',
+    postalCode:   addr?.postalCode ?? '',
+    city:         addr?.city ?? '',
+    country:      addr?.countryOrRegion ?? '',
+    mobilePhone:  contact.mobilePhone ?? '',
+    email:        contact.emailAddresses?.[0]?.address ?? '',
+  }
+}
+
+export function EditContactDialog({ contact, open, onOpenChange, onUpdated, onNoteSaved }: Props) {
   const t  = useTranslations('editContact')
   const tc = useTranslations('common')
+  const { data: session } = useSession()
+  const userId = session?.user?.email ?? ''
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      displayName: '', jobTitle: '', companyName: '',
-      street: '', postalCode: '', city: '', country: '',
-      mobilePhone: '', email: '',
-    },
-  })
+  const [noteContent, setNoteContent] = useState('')
+  const [noteLoading, setNoteLoading] = useState(false)
 
+  // Load note when dialog opens
   useEffect(() => {
-    if (!contact) return
-    const addr = contact.businessAddress ?? contact.homeAddress
-    reset({
-      displayName:  contact.displayName ?? '',
-      jobTitle:     contact.jobTitle ?? '',
-      companyName:  contact.companyName ?? '',
-      street:       addr?.street ?? '',
-      postalCode:   addr?.postalCode ?? '',
-      city:         addr?.city ?? '',
-      country:      addr?.countryOrRegion ?? '',
-      mobilePhone:  contact.mobilePhone ?? '',
-      email:        contact.emailAddresses?.[0]?.address ?? '',
-    })
-  }, [contact, reset])
+    if (!open || !contact || !userId) return
+    setNoteLoading(true)
+    notesApi.get(userId, contact.id)
+      .then((n) => setNoteContent(n?.content ?? ''))
+      .catch(() => setNoteContent(''))
+      .finally(() => setNoteLoading(false))
+  }, [open, contact?.id, userId])
+
+  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: getDefaultValues(contact),
+  })
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
@@ -84,19 +99,23 @@ export function EditContactDialog({ contact, open, onOpenChange, onUpdated }: Pr
           countryOrRegion: values.country      ?? '',
         },
       }
-      const res = await fetch(`/api/graph/contacts/${contact.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err?.error ?? res.statusText)
+      const [contactRes] = await Promise.all([
+        fetch(`/api/graph/contacts/${contact.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }),
+        userId ? notesApi.save(userId, contact.id, noteContent) : Promise.resolve(),
+      ])
+      if (!contactRes.ok) {
+        const err = await contactRes.json().catch(() => ({}))
+        throw new Error(err?.error ?? contactRes.statusText)
       }
-      return res.json()
+      return contactRes.json()
     },
     onSuccess: () => {
       toast.success(t('success'))
+      onNoteSaved?.(contact!.id, noteContent.trim().length > 0)
       onOpenChange(false)
       onUpdated()
     },
@@ -164,6 +183,24 @@ export function EditContactDialog({ contact, open, onOpenChange, onUpdated }: Pr
               <Input id="ec-email" type="email" {...register('email')} className={errors.email ? 'border-destructive' : ''} />
               {errors.email && <p className="text-xs text-destructive">{t('emailInvalid')}</p>}
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="ec-note">{t('notes')}</Label>
+            {noteLoading ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground h-20 px-3 border rounded-md">
+                <Loader2 className="h-3 w-3 animate-spin" suppressHydrationWarning />
+                {tc('loading')}
+              </div>
+            ) : (
+              <Textarea
+                id="ec-note"
+                value={noteContent}
+                onChange={(e) => setNoteContent(e.target.value)}
+                placeholder={t('notesPlaceholder')}
+                className="resize-none h-20 text-sm"
+              />
+            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-1">

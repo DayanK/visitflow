@@ -277,7 +277,9 @@
     "streetRequired": "La rue est requise",
     "cityRequired": "La ville est requise",
     "countryRequired": "Le pays est requis",
-    "emailInvalid": "Adresse e-mail invalide"
+    "emailInvalid": "Adresse e-mail invalide",
+    "notes": "Notes",
+    "notesPlaceholder": "Notes internes sur ce contact…"
   },
   "createContact": {
     "title": "Nouveau contact",

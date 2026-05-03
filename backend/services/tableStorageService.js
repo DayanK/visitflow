@@ -7,6 +7,7 @@ const TABLE_NAMES = {
   USER_SETTINGS: 'UserSettings',
   COORDINATES: 'Coordinates',
   VISIT_REPORT: 'VisitReport',
+  CONTACT_NOTES: 'ContactNotes',
 };
 
 function getTableClient(tableName) {
@@ -156,6 +157,44 @@ async function deleteVisitReport(userId, appointmentId) {
   await client.deleteEntity(userId, appointmentId);
 }
 
+// ─── Contact Notes ─────────────────────────────────────────────────────────────
+
+async function getContactNote(userId, contactId) {
+  const client = getTableClient(TABLE_NAMES.CONTACT_NOTES);
+  try {
+    const entity = await client.getEntity(normalizeKey(userId), normalizeKey(contactId));
+    return { contactId, content: entity.Content || '', updatedAt: entity.UpdatedAt || '' };
+  } catch (err) {
+    if (err.statusCode === 404) return null;
+    throw err;
+  }
+}
+
+async function getAllContactNotes(userId) {
+  const client = getTableClient(TABLE_NAMES.CONTACT_NOTES);
+  const pk = normalizeKey(userId);
+  const entities = client.listEntities({ queryOptions: { filter: `PartitionKey eq '${pk}'` } });
+  const result = [];
+  for await (const entity of entities) {
+    result.push({ contactId: entity.ContactId, content: entity.Content || '', updatedAt: entity.UpdatedAt || '' });
+  }
+  return result;
+}
+
+async function upsertContactNote(userId, contactId, content) {
+  const client = getTableClient(TABLE_NAMES.CONTACT_NOTES);
+  const pk = normalizeKey(userId);
+  const rk = normalizeKey(contactId);
+  if (!content || !content.trim()) {
+    try { await client.deleteEntity(pk, rk); } catch (e) { if (e.statusCode !== 404) throw e; }
+    return;
+  }
+  await client.upsertEntity(
+    { partitionKey: pk, rowKey: rk, ContactId: contactId, Content: content, UpdatedAt: new Date().toISOString() },
+    'Replace'
+  );
+}
+
 module.exports = {
   initializeTables,
   getAllUserSettings,
@@ -167,4 +206,7 @@ module.exports = {
   createVisitReport,
   updateVisitReport,
   deleteVisitReport,
+  getContactNote,
+  getAllContactNotes,
+  upsertContactNote,
 };

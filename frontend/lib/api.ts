@@ -79,6 +79,20 @@ export const visitsApi = {
     }),
 }
 
+// ─── Contact Notes ────────────────────────────────────────────────────────────
+export type ContactNote = { contactId: string; content: string; updatedAt: string }
+
+export const notesApi = {
+  getAll: (userId: string): Promise<ContactNote[]> =>
+    api.get(`/api/GetAllContactNotes/${encodeURIComponent(userId)}`).then((r) => r.data.notes ?? []),
+
+  get: (userId: string, contactId: string): Promise<ContactNote> =>
+    api.get(`/api/GetContactNote/${encodeURIComponent(userId)}/${encodeURIComponent(contactId)}`).then((r) => r.data.note),
+
+  save: (userId: string, contactId: string, content: string) =>
+    api.post('/api/StoreContactNote', { userId, contactId, content }).then((r) => r.data),
+}
+
 // ─── Graph API (via Next.js API routes — same origin, no CORS) ───────────────
 export const graphApi = {
   getAllContacts: (_token?: string) =>

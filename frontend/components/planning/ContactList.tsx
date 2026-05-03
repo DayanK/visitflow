@@ -1,19 +1,20 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
+import { useSession } from 'next-auth/react'
 import { useMutation } from '@tanstack/react-query'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Search, MapPin, Phone, Mail, SlidersHorizontal, X, UserPlus, RefreshCw, Pencil, Trash2 } from 'lucide-react'
+import { Search, MapPin, Phone, Mail, SlidersHorizontal, X, UserPlus, RefreshCw, Pencil, Trash2, StickyNote } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { notesApi } from '@/lib/api'
 import { CreateContactDialog } from './CreateContactDialog'
 import { EditContactDialog } from './EditContactDialog'
 import type { GraphContact, Visit } from '@/types'
@@ -40,11 +41,21 @@ function getAddress(c: GraphContact): string {
 export function ContactList({ contacts, selectedIds, onToggle, onSelectIds, onDeselectIds, onContactCreated, onRefresh, isRefreshing, visits = [], reminderThreshold = 60 }: Props) {
   const t  = useTranslations('contacts')
   const tc = useTranslations('common')
+  const { data: session } = useSession()
+  const userId = session?.user?.email ?? ''
 
   const [createOpen,    setCreateOpen]   = useState(false)
   const [editContact,   setEditContact]  = useState<GraphContact | null>(null)
   const [deleteTarget,  setDeleteTarget] = useState<GraphContact | null>(null)
   const [search,        setSearch]       = useState('')
+  const [noteIds,       setNoteIds]      = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!userId) return
+    notesApi.getAll(userId)
+      .then((notes) => setNoteIds(new Set(notes.map((n) => n.contactId))))
+      .catch(() => {})
+  }, [userId])
 
   const today = Date.now()
   const lastVisitMap = useMemo(() => {
@@ -276,7 +287,7 @@ export function ContactList({ contacts, selectedIds, onToggle, onSelectIds, onDe
       </div>
 
       {/* List */}
-      <ScrollArea className="flex-1">
+      <div className="flex-1 overflow-y-auto">
         <div className="divide-y">
           {filtered.length === 0 && (
             <p className="py-10 text-center text-sm text-muted-foreground">{t('noResults')}</p>
@@ -288,7 +299,7 @@ export function ContactList({ contacts, selectedIds, onToggle, onSelectIds, onDe
               <div
                 key={contact.id}
                 className={cn(
-                  'flex items-start transition-colors hover:bg-accent/40',
+                  'group flex items-start transition-colors hover:bg-accent/40',
                   selected && 'bg-primary/5'
                 )}
               >
@@ -307,6 +318,9 @@ export function ContactList({ contacts, selectedIds, onToggle, onSelectIds, onDe
                       <p className={cn('text-sm font-medium truncate leading-tight', selected ? 'text-primary' : 'text-foreground')}>
                         {contact.displayName ?? '(No name)'}
                       </p>
+                      {noteIds.has(contact.id) && (
+                        <StickyNote className="h-3 w-3 shrink-0 text-amber-400" suppressHydrationWarning />
+                      )}
                       {(() => {
                         const days = getDaysSince(contact)
                         if (days === null) return null
@@ -351,7 +365,7 @@ export function ContactList({ contacts, selectedIds, onToggle, onSelectIds, onDe
                   </div>
                 </button>
                 {/* Action buttons */}
-                <div className="flex items-center gap-0.5 pr-2 pt-2 shrink-0">
+                <div className="flex items-center gap-0.5 pr-2 pt-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => setEditContact(contact)}
                     className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
@@ -371,7 +385,7 @@ export function ContactList({ contacts, selectedIds, onToggle, onSelectIds, onDe
             )
           })}
         </div>
-      </ScrollArea>
+      </div>
     </div>
 
     <CreateContactDialog
@@ -381,10 +395,19 @@ export function ContactList({ contacts, selectedIds, onToggle, onSelectIds, onDe
     />
 
     <EditContactDialog
+      key={editContact?.id ?? 'none'}
       contact={editContact}
       open={!!editContact}
       onOpenChange={(v) => { if (!v) setEditContact(null) }}
       onUpdated={() => { onRefresh?.() }}
+      onNoteSaved={(contactId, hasNote) => {
+        setNoteIds((prev) => {
+          const next = new Set(prev)
+          if (hasNote) next.add(contactId)
+          else next.delete(contactId)
+          return next
+        })
+      }}
     />
 
     <AlertDialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null) }}>

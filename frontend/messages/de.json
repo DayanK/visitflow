@@ -277,7 +277,9 @@
     "streetRequired": "Straße ist erforderlich",
     "cityRequired": "Stadt ist erforderlich",
     "countryRequired": "Land ist erforderlich",
-    "emailInvalid": "Ungültige E-Mail-Adresse"
+    "emailInvalid": "Ungültige E-Mail-Adresse",
+    "notes": "Notizen",
+    "notesPlaceholder": "Interne Notizen zu diesem Kontakt…"
   },
   "createContact": {
     "title": "Neuer Kontakt",

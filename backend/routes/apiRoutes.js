@@ -2,6 +2,7 @@ const express = require('express');
 const { getContactCoordinates, routePlanning } = require('../controllers/routePlanningController');
 const { getAllSettings, storeSettings } = require('../controllers/userSettingsController');
 const { getAllVisits, storeVisit, updateVisit, deleteVisit } = require('../controllers/visitReportController');
+const { getNote, getAllNotes, storeNote } = require('../controllers/contactNotesController');
 
 const router = express.Router();
 
@@ -20,5 +21,10 @@ router.get('/GetAllVisitReportByUser/:userId', getAllVisits);
 router.post('/StoreUserVisitReport', storeVisit);
 router.post('/UpdateUserVisitReportByAppointmentId', updateVisit);
 router.delete('/DeleteUserVisitReportByAppointmentId/:appointmentId', deleteVisit);
+
+// ─── Contact Notes ────────────────────────────────────────────────────────────
+router.get('/GetAllContactNotes/:userId', getAllNotes);
+router.get('/GetContactNote/:userId/:contactId', getNote);
+router.post('/StoreContactNote', storeNote);
 
 module.exports = router;

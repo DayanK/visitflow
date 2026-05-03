@@ -122,7 +122,10 @@ export function ContactMap({
       const bounds = atlas.data.BoundingBox.fromPositions(
         valid.map((c) => [c.Longitude, c.Latitude])
       )
-      map.setCamera({ bounds, padding: 70, type: 'fly', duration: 800 })
+      const w = containerRef.current?.clientWidth ?? 400
+      const h = containerRef.current?.clientHeight ?? 400
+      const padding = Math.min(70, Math.floor(Math.min(w, h) / 4))
+      map.setCamera({ bounds, padding, type: 'fly', duration: 800 })
       hasFitCameraRef.current = true
     }
   }
