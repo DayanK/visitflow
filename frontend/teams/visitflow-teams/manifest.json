@@ -1,0 +1,65 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.0.0",
+  "id": "bad53374-64e5-46db-95d5-8120417c6b38",
+  "developer": {
+    "name": "VisitFlow",
+    "websiteUrl": "https://visitflow-sand.vercel.app",
+    "privacyUrl": "https://visitflow-sand.vercel.app/privacy",
+    "termsOfUseUrl": "https://visitflow-sand.vercel.app/terms"
+  },
+  "name": {
+    "short": "VisitFlow",
+    "full": "VisitFlow — Route Planning"
+  },
+  "description": {
+    "short": "Optimized customer visit planning",
+    "full": "Plan and optimize your customer visits, track visit reports, and manage your route — directly inside Microsoft Teams."
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#6366f1",
+  "staticTabs": [
+    {
+      "entityId": "planning",
+      "name": "Planning",
+      "contentUrl": "https://visitflow-sand.vercel.app/planning",
+      "websiteUrl": "https://visitflow-sand.vercel.app/planning",
+      "scopes": ["personal"]
+    },
+    {
+      "entityId": "visits",
+      "name": "Visit Reports",
+      "contentUrl": "https://visitflow-sand.vercel.app/visits",
+      "websiteUrl": "https://visitflow-sand.vercel.app/visits",
+      "scopes": ["personal"]
+    },
+    {
+      "entityId": "settings",
+      "name": "Settings",
+      "contentUrl": "https://visitflow-sand.vercel.app/settings",
+      "websiteUrl": "https://visitflow-sand.vercel.app/settings",
+      "scopes": ["personal"]
+    },
+    {
+      "entityId": "subscription",
+      "name": "Subscription",
+      "contentUrl": "https://visitflow-sand.vercel.app/subscription",
+      "websiteUrl": "https://visitflow-sand.vercel.app/subscription",
+      "scopes": ["personal"]
+    }
+  ],
+  "permissions": ["identity"],
+  "validDomains": [
+    "visitflow-sand.vercel.app",
+    "login.microsoftonline.com",
+    "*.login.microsoftonline.com"
+  ],
+  "webApplicationInfo": {
+    "id": "67c5cf1a-7c3d-4f1b-b8d9-72b4b4417d1f",
+    "resource": "api://visitflow-sand.vercel.app/67c5cf1a-7c3d-4f1b-b8d9-72b4b4417d1f"
+  }
+}

@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/next-env.d.ts
+frontend/tsconfig.tsbuildinfo
+
+# Build
+backend/dist/
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# Vercel
+.vercel/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Teams generated assets
+frontend/teams/color.png
+frontend/teams/outline.png
+frontend/teams/visitflow-teams.zip
+backend/public/build/

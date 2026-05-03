@@ -1,0 +1,35 @@
+{
+  "name": "polumana-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "client": "npm start --prefix ../frontend",
+    "dev": "concurrently -n 'server,client' -c 'blue,green' \"npm run server\" \"npm run client\"",
+    "server": "nodemon index.js",
+    "build": "node build.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@azure/data-tables": "^13.2.2",
+    "@azure/data-tables": "^13.2.2",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
+    "axios": "^1.7.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "isomorphic-fetch": "^3.0.0",
+    "morgan": "^1.10.0",
+    "nodemon": "^3.1.1",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "esbuild": "^0.21.5",
+    "nodemon": "^3.1.1"
+  }
+}
